@@ -4,14 +4,18 @@ const nextConfig = {
     remotePatterns: [
       {
         hostname: 'localhost',
-        pathname: '/**'
+        pathname: '/**',
       },
       {
         hostname: 'via.placeholder.com',
-        pathname: '/**'
-      }
-    ]
-  }
-}
+        pathname: '/**',
+      },
+      {
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
+      },
+    ],
+  },
+};
 
-export default nextConfig
+export default nextConfig;
