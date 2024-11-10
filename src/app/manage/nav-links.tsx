@@ -1,18 +1,25 @@
-'use client'
-import menuItems from '@/app/manage/menuItems'
+'use client';
+import menuItems from '@/app/manage/menuItems';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  TooltipProvider
-} from '@/components/ui/tooltip'
-import { cn } from '@/lib/utils'
-import { Package2, Settings } from 'lucide-react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+  TooltipProvider,
+} from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { Package2, Settings } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useAppContext } from '@/components/app-provider';
+import { Role } from '@/constants/type';
 
 export default function NavLinks() {
-  const pathname = usePathname()
+  const pathname = usePathname();
+  const { role } = useAppContext();
+
+  const filteredMenuItems = menuItems.filter(
+    (item) => !(role === Role.Employee && item.title === 'Nhân viên')
+  );
   return (
     <TooltipProvider>
       <aside className='fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex'>
@@ -25,8 +32,8 @@ export default function NavLinks() {
             <span className='sr-only'>Acme Inc</span>
           </Link>
 
-          {menuItems.map((Item, index) => {
-            const isActive = pathname === Item.href
+          {filteredMenuItems.map((Item, index) => {
+            const isActive = pathname === Item.href;
             return (
               <Tooltip key={index}>
                 <TooltipTrigger asChild>
@@ -36,7 +43,7 @@ export default function NavLinks() {
                       'flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:text-foreground md:h-8 md:w-8',
                       {
                         'bg-accent text-accent-foreground': isActive,
-                        'text-muted-foreground': !isActive
+                        'text-muted-foreground': !isActive,
                       }
                     )}
                   >
@@ -46,7 +53,7 @@ export default function NavLinks() {
                 </TooltipTrigger>
                 <TooltipContent side='right'>{Item.title}</TooltipContent>
               </Tooltip>
-            )
+            );
           })}
         </nav>
         <nav className='mt-auto flex flex-col items-center gap-4 px-2 py-4'>
@@ -59,7 +66,7 @@ export default function NavLinks() {
                   {
                     'bg-accent text-accent-foreground':
                       pathname === '/manage/setting',
-                    'text-muted-foreground': pathname !== '/manage/setting'
+                    'text-muted-foreground': pathname !== '/manage/setting',
                   }
                 )}
               >
@@ -72,5 +79,5 @@ export default function NavLinks() {
         </nav>
       </aside>
     </TooltipProvider>
-  )
+  );
 }

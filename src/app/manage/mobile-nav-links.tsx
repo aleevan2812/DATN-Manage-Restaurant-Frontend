@@ -1,14 +1,21 @@
-'use client'
-import menuItems from '@/app/manage/menuItems'
-import { Button } from '@/components/ui/button'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { cn } from '@/lib/utils'
-import { Package2, PanelLeft } from 'lucide-react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+'use client';
+import menuItems from '@/app/manage/menuItems';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { cn } from '@/lib/utils';
+import { Package2, PanelLeft } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useAppContext } from '@/components/app-provider';
+import { Role } from '@/constants/type';
 
 export default function MobileNavLinks() {
-  const pathname = usePathname()
+  const pathname = usePathname();
+  const { role } = useAppContext();
+
+  const filteredMenuItems = menuItems.filter(
+    (item) => !(role === Role.Employee && item.title === 'Nhân viên')
+  );
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -26,24 +33,27 @@ export default function MobileNavLinks() {
             <Package2 className='h-5 w-5 transition-all group-hover:scale-110' />
             <span className='sr-only'>Acme Inc</span>
           </Link>
-          {menuItems.map((Item, index) => {
-            const isActive = pathname === Item.href
+          {filteredMenuItems.map((Item, index) => {
+            const isActive = pathname === Item.href;
             return (
               <Link
                 key={index}
                 href={Item.href}
-                className={cn('flex items-center gap-4 px-2.5  hover:text-foreground', {
-                  'text-foreground': isActive,
-                  'text-muted-foreground': !isActive
-                })}
+                className={cn(
+                  'flex items-center gap-4 px-2.5  hover:text-foreground',
+                  {
+                    'text-foreground': isActive,
+                    'text-muted-foreground': !isActive,
+                  }
+                )}
               >
                 <Item.Icon className='h-5 w-5' />
                 {Item.title}
               </Link>
-            )
+            );
           })}
         </nav>
       </SheetContent>
     </Sheet>
-  )
+  );
 }
