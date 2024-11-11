@@ -1,21 +1,29 @@
-'use client'
+'use client';
 
-import { Badge } from '@/components/ui/badge'
-import { toast } from '@/components/ui/use-toast'
-import { OrderStatus } from '@/constants/type'
-import socket from '@/lib/socket'
-import { formatCurrency, getVietnameseOrderStatus } from '@/lib/utils'
-import { useGuestGetOrderListQuery } from '@/queries/useGuest'
+import { Badge } from '@/components/ui/badge';
+import { toast } from '@/components/ui/use-toast';
+import { OrderStatus } from '@/constants/type';
+import socket from '@/lib/socket';
+import { formatCurrency, getVietnameseOrderStatus } from '@/lib/utils';
+import { useGuestGetOrderListQuery } from '@/queries/useGuest';
 import {
   PayGuestOrdersResType,
-  UpdateOrderResType
-} from '@/schemaValidations/order.schema'
-import Image from 'next/image'
-import { useEffect, useMemo } from 'react'
+  UpdateOrderResType,
+} from '@/schemaValidations/order.schema';
+import { log } from 'console';
+import Image from 'next/image';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  HubConnection,
+  HubConnectionBuilder,
+  LogLevel,
+} from '@microsoft/signalr';
+import { dataTagSymbol } from '@tanstack/react-query';
 
 export default function OrdersCart() {
-  const { data, refetch } = useGuestGetOrderListQuery()
-  const orders = useMemo(() => data?.payload.data ?? [], [data])
+  const { data, refetch } = useGuestGetOrderListQuery();
+  const orders = useMemo(() => data?.payload.data ?? [], [data]);
+  const [connection, setConnection] = useState<HubConnection | null>(null);
 
   const { waitingForPaying, paid } = useMemo(() => {
     return orders.reduce(
@@ -31,9 +39,9 @@ export default function OrdersCart() {
               price:
                 result.waitingForPaying.price +
                 order.dishSnapshot.price * order.quantity,
-              quantity: result.waitingForPaying.quantity + order.quantity
-            }
-          }
+              quantity: result.waitingForPaying.quantity + order.quantity,
+            },
+          };
         }
         if (order.status === OrderStatus.Paid) {
           return {
@@ -41,71 +49,93 @@ export default function OrdersCart() {
             paid: {
               price:
                 result.paid.price + order.dishSnapshot.price * order.quantity,
-              quantity: result.paid.quantity + order.quantity
-            }
-          }
+              quantity: result.paid.quantity + order.quantity,
+            },
+          };
         }
-        return result
+        return result;
       },
       {
         waitingForPaying: {
           price: 0,
-          quantity: 0
+          quantity: 0,
         },
         paid: {
           price: 0,
-          quantity: 0
-        }
+          quantity: 0,
+        },
       }
-    )
-  }, [orders])
+    );
+  }, [orders]);
 
   useEffect(() => {
-    if (socket.connected) {
-      onConnect()
-    }
+    const newConnection = new HubConnectionBuilder()
+      .withUrl(process.env.NEXT_PUBLIC_NOTIFY_URL!)
+      .withAutomaticReconnect()
+      .build();
+
+    setConnection(newConnection);
+  }, []);
+
+  useEffect(() => {
+    // if (socket.connected) {
+    //   onConnect()
+    // }
 
     function onConnect() {
-      console.log(socket.id)
+      // console.log(socket.id)
+      console.log('Connected');
     }
 
     function onDisconnect() {
-      console.log('disconnect')
+      console.log('disconnect');
     }
 
     function onUpdateOrder(data: UpdateOrderResType['data']) {
       const {
         dishSnapshot: { name },
-        quantity
-      } = data
+        quantity,
+      } = data;
       toast({
         description: `Món ${name} (SL: ${quantity}) vừa được cập nhật sang trạng thái "${getVietnameseOrderStatus(
           data.status
-        )}"`
-      })
-      refetch()
+        )}"`,
+      });
+      refetch();
     }
 
     function onPayment(data: PayGuestOrdersResType['data']) {
-      const { guest } = data[0]
+      const { guest } = data[0];
       toast({
-        description: `${guest?.name} tại bàn ${guest?.tableNumber} thanh toán thành công ${data.length} đơn`
-      })
-      refetch()
+        description: `${guest?.name} tại bàn ${guest?.tableNumber} thanh toán thành công ${data.length} đơn`,
+      });
+      refetch();
     }
 
-    socket.on('update-order', onUpdateOrder)
-    socket.on('payment', onPayment)
-    socket.on('connect', onConnect)
-    socket.on('disconnect', onDisconnect)
+    if (connection && connection?.state === 'Disconnected') {
+      connection?.start().then(() => {
+        console.log('Connected to notification hub');
+        connection.on('update-order', (data: any) => {
+          onUpdateOrder(data);
+        });
+      });
+    }
 
+    // socket.on('update-order', onUpdateOrder)
+    // socket.on('payment', onPayment)
+    // socket.on('connect', onConnect)
+    // socket.on('disconnect', onDisconnect)
+
+    // return () => {
+    //   socket.off('connect', onConnect)
+    //   socket.off('disconnect', onDisconnect)
+    //   socket.off('update-order', onUpdateOrder)
+    //   socket.off('payment', onPayment)
+    // };
     return () => {
-      socket.off('connect', onConnect)
-      socket.off('disconnect', onDisconnect)
-      socket.off('update-order', onUpdateOrder)
-      socket.off('payment', onPayment)
-    }
-  }, [refetch])
+      // connection?.stop();
+    };
+  }, [refetch, connection]);
   return (
     <>
       {orders.map((order, index) => (
@@ -150,5 +180,5 @@ export default function OrdersCart() {
         </div>
       </div>
     </>
-  )
+  );
 }

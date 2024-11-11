@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import {
   ColumnFiltersState,
   SortingState,
@@ -8,128 +8,134 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  useReactTable
-} from '@tanstack/react-table'
-import { Input } from '@/components/ui/input'
+  useReactTable,
+} from '@tanstack/react-table';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
-} from '@/components/ui/table'
+  TableRow,
+} from '@/components/ui/table';
 import {
   GetOrdersResType,
   PayGuestOrdersResType,
-  UpdateOrderResType
-} from '@/schemaValidations/order.schema'
-import AddOrder from '@/app/manage/orders/add-order'
-import EditOrder from '@/app/manage/orders/edit-order'
-import { createContext, useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
-import AutoPagination from '@/components/auto-pagination'
-import { getVietnameseOrderStatus, handleErrorApi } from '@/lib/utils'
-import { OrderStatusValues } from '@/constants/type'
-import OrderStatics from '@/app/manage/orders/order-statics'
-import orderTableColumns from '@/app/manage/orders/order-table-columns'
-import { useOrderService } from '@/app/manage/orders/order.service'
-import { Check, ChevronsUpDown } from 'lucide-react'
+  UpdateOrderResType,
+} from '@/schemaValidations/order.schema';
+import AddOrder from '@/app/manage/orders/add-order';
+import EditOrder from '@/app/manage/orders/edit-order';
+import { createContext, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import AutoPagination from '@/components/auto-pagination';
+import { getVietnameseOrderStatus, handleErrorApi } from '@/lib/utils';
+import { OrderStatusValues } from '@/constants/type';
+import OrderStatics from '@/app/manage/orders/order-statics';
+import orderTableColumns from '@/app/manage/orders/order-table-columns';
+import { useOrderService } from '@/app/manage/orders/order.service';
+import { Check, ChevronsUpDown } from 'lucide-react';
 
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import {
   Command,
   CommandGroup,
   CommandItem,
-  CommandList
-} from '@/components/ui/command'
+  CommandList,
+} from '@/components/ui/command';
 import {
   Popover,
   PopoverContent,
-  PopoverTrigger
-} from '@/components/ui/popover'
-import { endOfDay, format, startOfDay } from 'date-fns'
-import TableSkeleton from '@/app/manage/orders/table-skeleton'
-import { toast } from '@/components/ui/use-toast'
-import { GuestCreateOrdersResType } from '@/schemaValidations/guest.schema'
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { endOfDay, format, startOfDay } from 'date-fns';
+import TableSkeleton from '@/app/manage/orders/table-skeleton';
+import { toast } from '@/components/ui/use-toast';
+import { GuestCreateOrdersResType } from '@/schemaValidations/guest.schema';
 import {
   useGetOrderListQuery,
-  useUpdateOrderMutation
-} from '@/queries/useOrder'
-import { useTableListQuery } from '@/queries/useTable'
-import socket from '@/lib/socket'
+  useUpdateOrderMutation,
+} from '@/queries/useOrder';
+import { useTableListQuery } from '@/queries/useTable';
+import socket from '@/lib/socket';
+import {
+  HubConnection,
+  HubConnectionBuilder,
+  LogLevel,
+} from '@microsoft/signalr';
 
 export const OrderTableContext = createContext({
   setOrderIdEdit: (value: number | undefined) => {},
   orderIdEdit: undefined as number | undefined,
   changeStatus: (payload: {
-    orderId: number
-    dishId: number
-    status: (typeof OrderStatusValues)[number]
-    quantity: number
+    orderId: number;
+    dishId: number;
+    status: (typeof OrderStatusValues)[number];
+    quantity: number;
   }) => {},
-  orderObjectByGuestId: {} as OrderObjectByGuestID
-})
+  orderObjectByGuestId: {} as OrderObjectByGuestID,
+});
 
 export type StatusCountObject = Record<
   (typeof OrderStatusValues)[number],
   number
->
+>;
 export type Statics = {
-  status: StatusCountObject
-  table: Record<number, Record<number, StatusCountObject>>
-}
-export type OrderObjectByGuestID = Record<number, GetOrdersResType['data']>
-export type ServingGuestByTableNumber = Record<number, OrderObjectByGuestID>
+  status: StatusCountObject;
+  table: Record<number, Record<number, StatusCountObject>>;
+};
+export type OrderObjectByGuestID = Record<number, GetOrdersResType['data']>;
+export type ServingGuestByTableNumber = Record<number, OrderObjectByGuestID>;
 
-const PAGE_SIZE = 10
-const initFromDate = startOfDay(new Date())
-const initToDate = endOfDay(new Date())
+const PAGE_SIZE = 10;
+const initFromDate = startOfDay(new Date());
+const initToDate = endOfDay(new Date());
 
 export default function OrderTable() {
-  const searchParam = useSearchParams()
-  const [openStatusFilter, setOpenStatusFilter] = useState(false)
-  const [fromDate, setFromDate] = useState(initFromDate)
-  const [toDate, setToDate] = useState(initToDate)
-  const page = searchParam.get('page') ? Number(searchParam.get('page')) : 1
-  const pageIndex = page - 1
-  const [orderIdEdit, setOrderIdEdit] = useState<number | undefined>()
+  const [connection, setConnection] = useState<HubConnection | null>(null);
+  const searchParam = useSearchParams();
+  const [openStatusFilter, setOpenStatusFilter] = useState(false);
+  const [fromDate, setFromDate] = useState(initFromDate);
+  const [toDate, setToDate] = useState(initToDate);
+  const page = searchParam.get('page') ? Number(searchParam.get('page')) : 1;
+  const pageIndex = page - 1;
+  const [orderIdEdit, setOrderIdEdit] = useState<number | undefined>();
   const orderListQuery = useGetOrderListQuery({
     fromDate,
-    toDate
-  })
-  const refetchOrderList = orderListQuery.refetch
-  const orderList = orderListQuery.data?.payload.data ?? []
-  const tableListQuery = useTableListQuery()
-  const tableList = tableListQuery.data?.payload.data ?? []
-  const tableListSortedByNumber = tableList.sort((a, b) => a.number - b.number)
-  const [sorting, setSorting] = useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = useState({})
+    toDate,
+  });
+  const refetchOrderList = orderListQuery.refetch;
+  const orderList = orderListQuery.data?.payload.data ?? [];
+  const tableListQuery = useTableListQuery();
+  const tableList = tableListQuery.data?.payload.data ?? [];
+  const tableListSortedByNumber = tableList.sort((a, b) => a.number - b.number);
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = useState({});
   const [pagination, setPagination] = useState({
     pageIndex, // Gía trị mặc định ban đầu, không có ý nghĩa khi data được fetch bất đồng bộ
-    pageSize: PAGE_SIZE //default page size
-  })
-  const updateOrderMutation = useUpdateOrderMutation()
+    pageSize: PAGE_SIZE, //default page size
+  });
+  const updateOrderMutation = useUpdateOrderMutation();
   const { statics, orderObjectByGuestId, servingGuestByTableNumber } =
-    useOrderService(orderList)
+    useOrderService(orderList);
 
   const changeStatus = async (body: {
-    orderId: number
-    dishId: number
-    status: (typeof OrderStatusValues)[number]
-    quantity: number
+    orderId: number;
+    dishId: number;
+    status: (typeof OrderStatusValues)[number];
+    quantity: number;
   }) => {
     try {
-      await updateOrderMutation.mutateAsync(body)
+      await updateOrderMutation.mutateAsync(body);
     } catch (error) {
       handleErrorApi({
-        error
-      })
+        error,
+      });
     }
-  }
+  };
   ///
   const table = useReactTable({
     data: orderList,
@@ -149,85 +155,108 @@ export default function OrderTable() {
       columnFilters,
       columnVisibility,
       rowSelection,
-      pagination
-    }
-  })
+      pagination,
+    },
+  });
+
+  useEffect(() => {
+    const newConnection = new HubConnectionBuilder()
+      .withUrl(process.env.NEXT_PUBLIC_NOTIFY_URL!)
+      .withAutomaticReconnect()
+      .build();
+
+    setConnection(newConnection);
+  }, []);
 
   useEffect(() => {
     table.setPagination({
       pageIndex,
-      pageSize: PAGE_SIZE
-    })
-  }, [table, pageIndex])
+      pageSize: PAGE_SIZE,
+    });
+  }, [table, pageIndex]);
 
   const resetDateFilter = () => {
-    setFromDate(initFromDate)
-    setToDate(initToDate)
-  }
+    setFromDate(initFromDate);
+    setToDate(initToDate);
+  };
 
   useEffect(() => {
-    if (socket.connected) {
-      onConnect()
-    }
+    // if (socket.connected) {
+    //   onConnect();
+    // }
 
-    function onConnect() {
-      console.log(socket.id)
-    }
+    // function onConnect() {
+    //   console.log(socket.id);
+    // }
 
     function onDisconnect() {
-      console.log('disconnect')
+      console.log('disconnect');
     }
 
     function refetch() {
-      const now = new Date()
+      const now = new Date();
       if (now >= fromDate && now <= toDate) {
-        refetchOrderList()
+        refetchOrderList();
       }
     }
 
     function onUpdateOrder(data: UpdateOrderResType['data']) {
       const {
         dishSnapshot: { name },
-        quantity
-      } = data
+        quantity,
+      } = data;
       toast({
         description: `Món ${name} (SL: ${quantity}) vừa được cập nhật sang trạng thái "${getVietnameseOrderStatus(
           data.status
-        )}"`
-      })
-      refetch()
+        )}"`,
+      });
+      refetch();
     }
 
     function onNewOrder(data: GuestCreateOrdersResType['data']) {
-      const { guest } = data[0]
+      const { guest } = data[0];
       toast({
-        description: `${guest?.name} tại bàn ${guest?.tableNumber} vừa đặt ${data.length} đơn`
-      })
-      refetch()
+        description: `${guest?.name} tại bàn ${guest?.tableNumber} vừa đặt ${data.length} đơn`,
+      });
+      refetch();
     }
 
     function onPayment(data: PayGuestOrdersResType['data']) {
-      const { guest } = data[0]
+      const { guest } = data[0];
       toast({
-        description: `${guest?.name} tại bàn ${guest?.tableNumber} thanh toán thành công ${data.length} đơn`
-      })
-      refetch()
+        description: `${guest?.name} tại bàn ${guest?.tableNumber} thanh toán thành công ${data.length} đơn`,
+      });
+      refetch();
     }
 
-    socket.on('update-order', onUpdateOrder)
-    socket.on('new-order', onNewOrder)
-    socket.on('connect', onConnect)
-    socket.on('disconnect', onDisconnect)
-    socket.on('payment', onPayment)
+    if (connection && connection?.state === 'Disconnected') {
+      connection?.start().then(() => {
+        console.log('Connected to notification hub');
+        connection.on('update-order', (data: any) => {
+          onUpdateOrder(data);
+        });
+      });
+    }
+
+    // socket.on('update-order', onUpdateOrder)
+    // socket.on('new-order', onNewOrder)
+    // socket.on('connect', onConnect)
+    // socket.on('disconnect', onDisconnect)
+    // socket.on('payment', onPayment)
 
     return () => {
-      socket.off('connect', onConnect)
-      socket.off('disconnect', onDisconnect)
-      socket.off('update-order', onUpdateOrder)
-      socket.off('new-order', onNewOrder)
-      socket.off('payment', onPayment)
-    }
-  }, [refetchOrderList, fromDate, toDate])
+      // socket.off('connect', onConnect)
+      // socket.off('disconnect', onDisconnect)
+      // socket.off('update-order', onUpdateOrder)
+      // socket.off('new-order', onNewOrder)
+      // socket.off('payment', onPayment)
+      // if (connection?.state !== 'Disconnected') {
+      // connection?.stop();
+      // }
+      // connection?.off('update-order');
+      // connection?.off('payment');
+    };
+  }, [refetchOrderList, connection, fromDate, toDate]);
 
   return (
     <OrderTableContext.Provider
@@ -235,7 +264,7 @@ export default function OrderTable() {
         orderIdEdit,
         setOrderIdEdit,
         changeStatus,
-        orderObjectByGuestId
+        orderObjectByGuestId,
       }}
     >
       <div className='w-full'>
@@ -328,8 +357,8 @@ export default function OrderTable() {
                                 table.getColumn('status')?.getFilterValue()
                                 ? ''
                                 : currentValue
-                            )
-                          setOpenStatusFilter(false)
+                            );
+                          setOpenStatusFilter(false);
                         }}
                       >
                         <Check
@@ -372,7 +401,7 @@ export default function OrderTable() {
                                 header.getContext()
                               )}
                         </TableHead>
-                      )
+                      );
                     })}
                   </TableRow>
                 ))}
@@ -424,5 +453,5 @@ export default function OrderTable() {
         </div>
       </div>
     </OrderTableContext.Provider>
-  )
+  );
 }
