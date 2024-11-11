@@ -115,9 +115,11 @@ export default function OrdersCart() {
     if (connection && connection?.state === 'Disconnected') {
       connection?.start().then(() => {
         console.log('Connected to notification hub');
-        connection.on('update-order', (data: any) => {
-          onUpdateOrder(data);
-        });
+        // connection.on('update-order', (data: any) => {
+        //   onUpdateOrder(data);
+        // });
+        connection.on('update-order', onUpdateOrder);
+        connection.on('payment', onPayment);
       });
     }
 
