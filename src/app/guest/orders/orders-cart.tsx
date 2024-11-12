@@ -131,7 +131,7 @@ export default function OrdersCart() {
         // });
         connection.on('update-order', onUpdateOrder);
         connection.on('payment', onPayment);
-        connection.on('new-order', onNewOrder);
+        // connection.on('new-order', onNewOrder);
       });
     }
 
