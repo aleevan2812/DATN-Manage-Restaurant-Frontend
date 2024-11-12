@@ -19,6 +19,7 @@ import {
   LogLevel,
 } from '@microsoft/signalr';
 import { dataTagSymbol } from '@tanstack/react-query';
+import { GuestCreateOrdersResType } from '@/schemaValidations/guest.schema';
 
 export default function OrdersCart() {
   const { data, refetch } = useGuestGetOrderListQuery();
@@ -112,6 +113,16 @@ export default function OrdersCart() {
       refetch();
     }
 
+    function onNewOrder(data: GuestCreateOrdersResType['data']) {
+      const { guest } = data[0];
+      console.log(data);
+
+      toast({
+        description: `${guest?.name} tại bàn ${guest?.tableNumber} vừa được Nhà hàng đặt thêm ${data.length} đơn`,
+      });
+      refetch();
+    }
+
     if (connection && connection?.state === 'Disconnected') {
       connection?.start().then(() => {
         console.log('Connected to notification hub');
@@ -120,6 +131,7 @@ export default function OrdersCart() {
         // });
         connection.on('update-order', onUpdateOrder);
         connection.on('payment', onPayment);
+        connection.on('new-order', onNewOrder);
       });
     }
 
