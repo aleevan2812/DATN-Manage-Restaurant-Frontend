@@ -40,7 +40,8 @@ export const OrderSchema = z.object({
 export const OrderRevenue = z.object({
   revenue: z.number(),
   date: z.string(),
-  order: z.number(),
+  totalOrders: z.number(),
+  paidOrders: z.number(),
 });
 
 export const UpdateOrderBody = z.object({
