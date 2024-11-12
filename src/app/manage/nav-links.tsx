@@ -17,9 +17,15 @@ export default function NavLinks() {
   const pathname = usePathname();
   const { role } = useAppContext();
 
-  const filteredMenuItems = menuItems.filter(
-    (item) => !(role === Role.Employee && item.title === 'Nhân viên')
-  );
+  const filteredMenuItems = menuItems.filter((item) => {
+    if (
+      role === Role.Employee &&
+      (item.title === 'Nhân viên' || item.title === 'Phân tích')
+    ) {
+      return false; // Loại bỏ mục này
+    }
+    return true;
+  });
   return (
     <TooltipProvider>
       <aside className='fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex'>

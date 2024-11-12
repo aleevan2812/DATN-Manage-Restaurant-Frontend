@@ -13,9 +13,15 @@ export default function MobileNavLinks() {
   const pathname = usePathname();
   const { role } = useAppContext();
 
-  const filteredMenuItems = menuItems.filter(
-    (item) => !(role === Role.Employee && item.title === 'Nhân viên')
-  );
+  const filteredMenuItems = menuItems.filter((item) => {
+    if (
+      role === Role.Employee &&
+      (item.title === 'Nhân viên' || item.title === 'Phân tích')
+    ) {
+      return false; // Loại bỏ mục này
+    }
+    return true;
+  });
   return (
     <Sheet>
       <SheetTrigger asChild>
