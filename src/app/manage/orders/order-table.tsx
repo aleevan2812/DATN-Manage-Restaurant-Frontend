@@ -229,13 +229,17 @@ export default function OrderTable() {
       refetch();
     }
 
-    if (connection && connection?.state === 'Disconnected') {
-      connection?.start().then(() => {
-        console.log('Connected to notification hub');
-        connection.on('update-order', onUpdateOrder);
-        connection.on('payment', onPayment);
-        connection.on('new-order', onNewOrder);
-      });
+    if (connection) {
+      // && connection?.state === 'Disconnected'
+      connection
+        ?.start()
+        .then(() => {
+          console.log('Connected to notification hub');
+          connection.on('update-order', onUpdateOrder);
+          connection.on('payment', onPayment);
+          connection.on('new-order', onNewOrder);
+        })
+        .catch((error) => console.log(error));
     }
 
     // socket.on('update-order', onUpdateOrder)
@@ -251,7 +255,7 @@ export default function OrderTable() {
       // socket.off('new-order', onNewOrder)
       // socket.off('payment', onPayment)
       // if (connection?.state !== 'Disconnected') {
-      // connection?.stop();
+      connection?.stop();
       // }
       // connection?.off('update-order');
       // connection?.off('payment');

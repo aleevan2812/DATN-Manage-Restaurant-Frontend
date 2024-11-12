@@ -123,16 +123,20 @@ export default function OrdersCart() {
       refetch();
     }
 
-    if (connection && connection?.state === 'Disconnected') {
-      connection?.start().then(() => {
-        console.log('Connected to notification hub');
-        // connection.on('update-order', (data: any) => {
-        //   onUpdateOrder(data);
-        // });
-        connection.on('update-order', onUpdateOrder);
-        connection.on('payment', onPayment);
-        // connection.on('new-order', onNewOrder);
-      });
+    if (connection) {
+      // && connection?.state === 'Disconnected'
+      connection
+        ?.start()
+        .then(() => {
+          console.log('Connected to notification hub');
+          // connection.on('update-order', (data: any) => {
+          //   onUpdateOrder(data);
+          // });
+          connection.on('update-order', onUpdateOrder);
+          connection.on('payment', onPayment);
+          // connection.on('new-order', onNewOrder);
+        })
+        .catch((error) => console.log(error));
     }
 
     // socket.on('update-order', onUpdateOrder)
@@ -147,7 +151,7 @@ export default function OrdersCart() {
     //   socket.off('payment', onPayment)
     // };
     return () => {
-      // connection?.stop();
+      connection?.stop();
     };
   }, [refetch, connection]);
   return (
