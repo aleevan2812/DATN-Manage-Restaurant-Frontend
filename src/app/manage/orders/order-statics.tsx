@@ -93,6 +93,9 @@ export default function OrderStatics({
                       onPaySuccess={() => {
                         setSelectedTableNumber(0)
                       }}
+                      onRejectSuccess={() => {
+                        setSelectedTableNumber(0)
+                      }}
                     />
                     {index !== Object.keys(selectedServingGuest).length - 1 && (
                       <Separator className='my-5' />

@@ -1,32 +1,38 @@
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { OrderStatus } from '@/constants/type'
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { OrderStatus } from '@/constants/type';
 import {
   OrderStatusIcon,
   formatCurrency,
   formatDateTimeToLocaleString,
   formatDateTimeToTimeString,
   getVietnameseOrderStatus,
-  handleErrorApi
-} from '@/lib/utils'
-import { usePayForGuestMutation } from '@/queries/useOrder'
+  handleErrorApi,
+} from '@/lib/utils';
+import {
+  usePayForGuestMutation,
+  useRejectForGuestMutation,
+} from '@/queries/useOrder';
 import {
   GetOrdersResType,
-  PayGuestOrdersResType
-} from '@/schemaValidations/order.schema'
-import Image from 'next/image'
-import { Fragment } from 'react'
+  PayGuestOrdersResType,
+  RejectGuestOrdersResType,
+} from '@/schemaValidations/order.schema';
+import Image from 'next/image';
+import { Fragment } from 'react';
 
-type Guest = GetOrdersResType['data'][0]['guest']
-type Orders = GetOrdersResType['data']
+type Guest = GetOrdersResType['data'][0]['guest'];
+type Orders = GetOrdersResType['data'];
 export default function OrderGuestDetail({
   guest,
   orders,
-  onPaySuccess
+  onPaySuccess,
+  onRejectSuccess,
 }: {
-  guest: Guest
-  orders: Orders
-  onPaySuccess?: (data: PayGuestOrdersResType) => void
+  guest: Guest;
+  orders: Orders;
+  onPaySuccess?: (data: PayGuestOrdersResType) => void;
+  onRejectSuccess?: (data: RejectGuestOrdersResType) => void;
 }) {
   const ordersFilterToPurchase = guest
     ? orders.filter(
@@ -34,25 +40,40 @@ export default function OrderGuestDetail({
           order.status !== OrderStatus.Paid &&
           order.status !== OrderStatus.Rejected
       )
-    : []
+    : [];
   const purchasedOrderFilter = guest
     ? orders.filter((order) => order.status === OrderStatus.Paid)
-    : []
-  const payForGuestMutation = usePayForGuestMutation()
+    : [];
+  const payForGuestMutation = usePayForGuestMutation();
+  const rejectForGuestMutation = useRejectForGuestMutation();
 
   const pay = async () => {
-    if (payForGuestMutation.isPending || !guest) return
+    if (payForGuestMutation.isPending || !guest) return;
     try {
       const result = await payForGuestMutation.mutateAsync({
-        guestId: guest.id
-      })
-      onPaySuccess && onPaySuccess(result.payload)
+        guestId: guest.id,
+      });
+      onPaySuccess && onPaySuccess(result.payload);
     } catch (error) {
       handleErrorApi({
-        error
-      })
+        error,
+      });
     }
-  }
+  };
+
+  const reject = async () => {
+    if (rejectForGuestMutation.isPending || !guest) return;
+    try {
+      const result = await rejectForGuestMutation.mutateAsync({
+        guestId: guest.id,
+      });
+      onRejectSuccess && onRejectSuccess(result.payload);
+    } catch (error) {
+      handleErrorApi({
+        error,
+      });
+    }
+  };
   return (
     <div className='space-y-2 text-sm'>
       {guest && (
@@ -134,7 +155,7 @@ export default function OrderGuestDetail({
                 {formatDateTimeToTimeString(order.createdAt)}
               </span>
             </div>
-          )
+          );
         })}
       </div>
 
@@ -144,7 +165,7 @@ export default function OrderGuestDetail({
           <span>
             {formatCurrency(
               ordersFilterToPurchase.reduce((acc, order) => {
-                return acc + order.quantity * order.dishSnapshot.price
+                return acc + order.quantity * order.dishSnapshot.price;
               }, 0)
             )}
           </span>
@@ -156,14 +177,14 @@ export default function OrderGuestDetail({
           <span>
             {formatCurrency(
               purchasedOrderFilter.reduce((acc, order) => {
-                return acc + order.quantity * order.dishSnapshot.price
+                return acc + order.quantity * order.dishSnapshot.price;
               }, 0)
             )}
           </span>
         </Badge>
       </div>
 
-      <div>
+      <div className='flex gap-4'>
         <Button
           className='w-full'
           size={'sm'}
@@ -173,7 +194,17 @@ export default function OrderGuestDetail({
         >
           Thanh toán tất cả ({ordersFilterToPurchase.length} đơn)
         </Button>
+        <div></div>
+        <Button
+          className='w-full'
+          size={'sm'}
+          variant={"destructive"}
+          disabled={ordersFilterToPurchase.length === 0}
+          onClick={reject}
+        >
+          Từ chối tất cả ({ordersFilterToPurchase.length} đơn)
+        </Button>
       </div>
     </div>
-  )
+  );
 }

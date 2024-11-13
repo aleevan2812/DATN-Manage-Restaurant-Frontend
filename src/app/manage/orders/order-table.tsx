@@ -22,6 +22,7 @@ import {
 import {
   GetOrdersResType,
   PayGuestOrdersResType,
+  RejectGuestOrdersResType,
   UpdateOrderResType,
 } from '@/schemaValidations/order.schema';
 import AddOrder from '@/app/manage/orders/add-order';
@@ -64,6 +65,7 @@ import {
   HubConnectionBuilder,
   LogLevel,
 } from '@microsoft/signalr';
+import { todo } from 'node:test';
 
 export const OrderTableContext = createContext({
   setOrderIdEdit: (value: number | undefined) => {},
@@ -169,6 +171,10 @@ export default function OrderTable() {
   }, []);
 
   useEffect(() => {
+    console.log(toDate);
+  }, [toDate]);
+
+  useEffect(() => {
     table.setPagination({
       pageIndex,
       pageSize: PAGE_SIZE,
@@ -229,7 +235,15 @@ export default function OrderTable() {
       refetch();
     }
 
-    if (connection) {
+    function onReject(data: RejectGuestOrdersResType['data']) {
+      const { guest } = data[0];
+      toast({
+        description: `${guest?.name} tại bàn ${guest?.tableNumber} bị từ chối ${data.length} đơn`,
+      });
+      refetch();
+    }
+
+    if (connection && connection?.state === 'Disconnected') {
       // && connection?.state === 'Disconnected'
       connection
         ?.start()
@@ -237,6 +251,7 @@ export default function OrderTable() {
           console.log('Connected to notification hub');
           connection.on('update-order', onUpdateOrder);
           connection.on('payment', onPayment);
+          connection.on('reject', onReject);
           connection.on('new-order', onNewOrder);
         })
         .catch((error) => console.log(error));
@@ -255,7 +270,7 @@ export default function OrderTable() {
       // socket.off('new-order', onNewOrder)
       // socket.off('payment', onPayment)
       // if (connection?.state !== 'Disconnected') {
-      connection?.stop();
+      // connection?.stop();
       // }
       // connection?.off('update-order');
       // connection?.off('payment');

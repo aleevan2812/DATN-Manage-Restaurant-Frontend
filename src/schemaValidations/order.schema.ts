@@ -99,11 +99,19 @@ export const PayGuestOrdersBody = z.object({
   guestId: z.number(),
 });
 
+export const RejectGuestOrdersBody = z.object({
+  guestId: z.number(),
+});
+
 export type PayGuestOrdersBodyType = z.TypeOf<typeof PayGuestOrdersBody>;
+export type RejectGuestOrdersBodyType = z.TypeOf<typeof RejectGuestOrdersBody>;
 
 export const PayGuestOrdersRes = GetOrdersRes;
 
-export type PayGuestOrdersResType = z.TypeOf<typeof PayGuestOrdersRes>;
+export type RejectGuestOrdersResType = z.TypeOf<typeof PayGuestOrdersRes>;
+export const RejectGuestOrdersRes = GetOrdersRes;
+
+export type PayGuestOrdersResType = z.TypeOf<typeof RejectGuestOrdersRes>;
 
 export const CreateOrdersBody = z
   .object({

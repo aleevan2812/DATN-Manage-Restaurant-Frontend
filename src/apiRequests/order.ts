@@ -10,6 +10,8 @@ import {
   UpdateOrderBodyType,
   UpdateOrderResType,
   GetRevenueResType,
+  RejectGuestOrdersBodyType,
+  RejectGuestOrdersResType,
 } from '@/schemaValidations/order.schema';
 import queryString from 'query-string';
 
@@ -31,6 +33,8 @@ const orderApiRequest = {
   getRevenue: () => http.get<GetRevenueResType>(`/orders/revenue`),
   pay: (body: PayGuestOrdersBodyType) =>
     http.post<PayGuestOrdersResType>(`/orders/pay`, body),
+  reject: (body: RejectGuestOrdersBodyType) =>
+    http.post<RejectGuestOrdersResType>(`/orders/reject`, body),
 };
 
 export default orderApiRequest;

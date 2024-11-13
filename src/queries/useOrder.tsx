@@ -2,6 +2,7 @@ import orderApiRequest from '@/apiRequests/order';
 import {
   GetOrdersQueryParamsType,
   PayGuestOrdersBodyType,
+  RejectGuestOrdersBodyType,
   UpdateOrderBodyType,
 } from '@/schemaValidations/order.schema';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -48,6 +49,12 @@ export const useGetRevenueQuery = () => {
 export const usePayForGuestMutation = () => {
   return useMutation({
     mutationFn: (body: PayGuestOrdersBodyType) => orderApiRequest.pay(body),
+  });
+};
+
+export const useRejectForGuestMutation = () => {
+  return useMutation({
+    mutationFn: (body: RejectGuestOrdersBodyType) => orderApiRequest.reject(body),
   });
 };
 

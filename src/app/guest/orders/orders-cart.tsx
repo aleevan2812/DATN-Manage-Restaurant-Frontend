@@ -8,6 +8,7 @@ import { formatCurrency, getVietnameseOrderStatus } from '@/lib/utils';
 import { useGuestGetOrderListQuery } from '@/queries/useGuest';
 import {
   PayGuestOrdersResType,
+  RejectGuestOrdersResType,
   UpdateOrderResType,
 } from '@/schemaValidations/order.schema';
 import { log } from 'console';
@@ -113,6 +114,14 @@ export default function OrdersCart() {
       refetch();
     }
 
+    function onReject(data: RejectGuestOrdersResType['data']) {
+      const { guest } = data[0];
+      toast({
+        description: `${guest?.name} tại bàn ${guest?.tableNumber} bị từ chối ${data.length} đơn`,
+      });
+      refetch();
+    }
+
     function onNewOrder(data: GuestCreateOrdersResType['data']) {
       const { guest } = data[0];
       console.log(data);
@@ -123,8 +132,7 @@ export default function OrdersCart() {
       refetch();
     }
 
-    if (connection) {
-      // && connection?.state === 'Disconnected'
+    if (connection && connection?.state === 'Disconnected') {
       connection
         ?.start()
         .then(() => {
@@ -134,6 +142,7 @@ export default function OrdersCart() {
           // });
           connection.on('update-order', onUpdateOrder);
           connection.on('payment', onPayment);
+          connection.on('reject', onReject);
           // connection.on('new-order', onNewOrder);
         })
         .catch((error) => console.log(error));
