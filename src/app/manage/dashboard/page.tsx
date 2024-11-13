@@ -16,7 +16,7 @@ export default async function Dashboard() {
   }
   return (
     <div>
-      <ChartOrder />
+      <h1>Welcome to Trà Đá Restaurant!</h1>
     </div>
   );
 }

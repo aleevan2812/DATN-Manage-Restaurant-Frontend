@@ -18,14 +18,19 @@ import queryString from 'query-string';
 const orderApiRequest = {
   createOrders: (body: CreateOrdersBodyType) =>
     http.post<CreateOrdersResType>('/orders', body),
-  getOrderList: (queryParams: GetOrdersQueryParamsType) =>
-    http.get<GetOrdersResType>(
+  getOrderList: (queryParams: GetOrdersQueryParamsType) => {
+    return http.get<GetOrdersResType>(
       '/orders?' +
         queryString.stringify({
-          fromDate: queryParams.fromDate?.toISOString(),
-          toDate: queryParams.toDate?.toISOString(),
+          fromDate: queryParams.fromDate?.toLocaleString('en-US', {
+            timeZone: 'Asia/Ho_Chi_Minh',
+          }),
+          toDate: queryParams.toDate?.toLocaleString('en-US', {
+            timeZone: 'Asia/Ho_Chi_Minh',
+          }),
         })
-    ),
+    );
+  },
   updateOrder: (orderId: number, body: UpdateOrderBodyType) =>
     http.put<UpdateOrderResType>(`/orders/${orderId}`, body),
   getOrderDetail: (orderId: number) =>
