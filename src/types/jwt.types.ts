@@ -8,6 +8,7 @@ export interface TokenPayload {
   tokenType: TokenTypeValue
   exp: number
   iat: number
+  jwtTokenId?: string
 }
 
 export interface TableTokenPayload {
